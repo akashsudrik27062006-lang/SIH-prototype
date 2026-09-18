@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useState } from 'react';
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, CheckCircle2, AlertTriangle, XCircle, Upload, FileText, LogOut, Search, 
@@ -9,69 +8,12 @@ import {
 } from 'lucide-react';
 import './styles.css';
 
-type Role = 'officer' | 'manufacturer' | 'seller' | 'consumer';
-type Status = 'COMPLIANT' | 'WARNING' | 'NON_COMPLIANT' | 'INSPECTOR_CONFIRMED_NON_COMPLIANT' | 'UNDER_REINSPECTION';
-type Permission = 'scan' | 'detailed' | 'records' | 'officialReport' | 'complaint' | 'manageRules' | 'analytics' | 'review';
-type Confidence = Record<string, number>;
-type RuleRef = { law: string; section: string; url: string };
-
-type RuleViolation = {
-  requirement: string;
-  section: string;
-  status: 'PASSED' | 'MALFORMED' | 'MISSING';
-  detectedValue: string;
-  expectedValue: string;
-  explanation: string;
-  ruleRef: RuleRef;
-  recommendation: string;
-  officerDecision?: 'VERIFIED' | 'REJECTED';
-};
-
-type Product = { 
-  id: string; 
-  name: string; 
-  manufacturer: string; 
-  category: string; 
-  image: string; 
-  fields: Record<string, string>; 
-  status: Status; 
-  location?: string; 
-  confidence?: Record<string, number>;
-};
-
-type Result = { 
-  id: string; 
-  product: Product; 
-  score: number; 
-  status: Status; 
-  violations: RuleViolation[]; 
-  date: string; 
-  review?: { 
-    inspector: string; 
-    remarks?: string; 
-    confirmedAt: string; 
-  };
-};
-
-type Complaint = {
-  id: string;
-  productName: string;
-  brand: string;
-  category: string;
-  issueType: string;
-  description: string;
-  status: 'SUBMITTED' | 'UNDER_INVESTIGATION' | 'RESOLVED';
-  date: string;
-  assignedOfficer?: string;
-  evidenceImage?: string;
-};
-
 const URL_ACT_2009 = 'https://consumeraffairs.gov.in/pages/legal-metrology-act';
 const URL_PCR_2011 = 'https://indiankanoon.org/doc/100694501/';
 const URL_AMEND_2023 = 'https://www.legitquest.com/act/legal-metrology-packaged-commodities-amendment-rules-2023/E049';
 const URL_NCH = 'https://consumerhelpline.gov.in/';
 
-const products: Product[] = [
+const products = [
   { 
     id: 'rice', 
     name: 'Premium Basmati Rice', 
@@ -150,7 +92,7 @@ const products: Product[] = [
   },
 ];
 
-const mockViolations = (p: Product): RuleViolation[] => {
+const mockViolations = (p) => {
   if (p.id === 'oil') {
     return [
       {
@@ -206,7 +148,7 @@ const mockViolations = (p: Product): RuleViolation[] => {
   return [];
 };
 
-const makeMockResult = (p: Product): Result => ({
+const makeMockResult = (p) => ({
   id: 'INSP-' + Math.floor(1000 + Math.random() * 9000),
   product: p,
   score: p.status === 'COMPLIANT' ? 98 : p.id === 'oil' ? 74 : p.id === 'biscuits' ? 62 : 48,
@@ -215,7 +157,7 @@ const makeMockResult = (p: Product): Result => ({
   date: new Date().toLocaleDateString('en-IN')
 });
 
-const initialComplaints: Complaint[] = [
+const initialComplaints = [
   {
     id: 'CMP-8821',
     productName: 'Heritage Turmeric Powder',
@@ -240,14 +182,14 @@ const initialComplaints: Complaint[] = [
   }
 ];
 
-const labels: Record<Role, string> = { 
+const labels = { 
   officer: 'Legal Metrology Officer', 
   manufacturer: 'Manufacturer / Packer', 
   seller: 'E-commerce / Seller', 
   consumer: 'Consumer' 
 };
 
-const creds: Record<Role, { email: string; password: string; name: string }> = {
+const creds = {
   officer: { email: 'officer@labelguard.demo', password: 'officer123', name: 'Ananya Sharma (Insp. ID: LMO-441)' },
   manufacturer: { email: 'manufacturer@labelguard.demo', password: 'manufacturer123', name: 'ABC Foods Quality Desk' },
   seller: { email: 'seller@labelguard.demo', password: 'seller123', name: 'Marketplace Seller Desk' },
@@ -301,9 +243,9 @@ const ruleSummaries = [
   }
 ];
 
-const cls = (s: Status) => (s === 'COMPLIANT' ? 'good' : s === 'WARNING' || s === 'UNDER_REINSPECTION' ? 'warn' : 'bad');
+const cls = (s) => (s === 'COMPLIANT' ? 'good' : s === 'WARNING' || s === 'UNDER_REINSPECTION' ? 'warn' : 'bad');
 
-function Seal({ score, statusLabel, tone, size = 96 }: { score: number; statusLabel: string; tone: 'good' | 'warn' | 'bad'; size?: number }) {
+function Seal({ score, statusLabel, tone, size = 96 }) {
   const r = 38;
   const c = 2 * Math.PI * r;
   const strokeColor = tone === 'good' ? 'var(--status-good)' : tone === 'warn' ? 'var(--status-warn)' : 'var(--status-bad)';
@@ -337,7 +279,7 @@ function Seal({ score, statusLabel, tone, size = 96 }: { score: number; statusLa
   );
 }
 
-function ScanGauge({ progress }: { progress: number }) {
+function ScanGauge({ progress }) {
   const r = 26;
   const c = 2 * Math.PI * r;
   const offset = c - (Math.min(100, Math.max(0, progress)) / 100) * c;
@@ -397,9 +339,9 @@ const SCAN_STEPS = [
   'Generating compliance assessment...'
 ];
 
-function Scanner({ done, role }: { done: (r: Result) => void; role: Role }) {
+function Scanner({ done, role }) {
   const [product, setProduct] = useState(products[role === 'manufacturer' ? 0 : role === 'seller' ? 1 : 1]);
-  const [file, setFile] = useState<string>();
+  const [file, setFile] = useState();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -472,7 +414,7 @@ function Scanner({ done, role }: { done: (r: Result) => void; role: Role }) {
   );
 }
 
-function OfficerDashboard({ onNewScan }: { onNewScan: () => void }) {
+function OfficerDashboard({ onNewScan }) {
   const nav = useNavigate();
   return (
     <>
@@ -547,11 +489,11 @@ function OfficerDashboard({ onNewScan }: { onNewScan: () => void }) {
   );
 }
 
-function OfficerInspectionResult({ result, onUpdateStatus }: { result: Result; onUpdateStatus: (newStatus: Status) => void }) {
-  const [violationsState, setViolationsState] = useState<RuleViolation[]>(result.violations);
+function OfficerInspectionResult({ result, onUpdateStatus }) {
+  const [violationsState, setViolationsState] = useState(result.violations);
   const nav = useNavigate();
 
-  const handleDecision = (idx: number, decision: 'VERIFIED' | 'REJECTED') => {
+  const handleDecision = (idx, decision) => {
     const updated = [...violationsState];
     updated[idx].officerDecision = decision;
     setViolationsState(updated);
@@ -566,7 +508,7 @@ function OfficerInspectionResult({ result, onUpdateStatus }: { result: Result; o
           <h1>{result.product.name}</h1>
           <p>{result.product.manufacturer} · {result.product.category} · Inspected on <span className="num">{result.date}</span></p>
         </div>
-        <Seal score={result.score} statusLabel={result.status} tone={cls(result.status) as 'good' | 'warn' | 'bad'} />
+        <Seal score={result.score} statusLabel={result.status} tone={cls(result.status)} />
       </div>
 
       {result.product.location && (
@@ -676,7 +618,7 @@ function OfficerInspectionResult({ result, onUpdateStatus }: { result: Result; o
   );
 }
 
-function OfficerComplaintsView({ complaints }: { complaints: Complaint[] }) {
+function OfficerComplaintsView({ complaints }) {
   return (
     <>
       <div className="page-title">
@@ -713,8 +655,8 @@ function OfficerComplaintsView({ complaints }: { complaints: Complaint[] }) {
   );
 }
 
-function ManufacturerDashboard({ onNewScan }: { onNewScan: () => void }) {
-  const [activeTab, setActiveTab] = useState<'check' | 'compare'>('check');
+function ManufacturerDashboard({ onNewScan }) {
+  const [activeTab, setActiveTab] = useState('check');
 
   return (
     <>
@@ -783,11 +725,11 @@ function ManufacturerDashboard({ onNewScan }: { onNewScan: () => void }) {
   );
 }
 
-function SellerDashboard({ onNewScan }: { onNewScan: () => void }) {
-  const [selectedBatch, setSelectedBatch] = useState<string[]>([]);
+function SellerDashboard({ onNewScan }) {
+  const [selectedBatch, setSelectedBatch] = useState([]);
   const [bulkRan, setBulkRan] = useState(false);
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id) => {
     setSelectedBatch(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
@@ -858,7 +800,7 @@ function SellerDashboard({ onNewScan }: { onNewScan: () => void }) {
   );
 }
 
-function ConsumerDashboard({ onNewScan }: { onNewScan: () => void }) {
+function ConsumerDashboard({ onNewScan }) {
   const nav = useNavigate();
   return (
     <>
@@ -907,7 +849,7 @@ function ConsumerDashboard({ onNewScan }: { onNewScan: () => void }) {
   );
 }
 
-function ConsumerComplaintForm({ onSubmit }: { onSubmit: (c: Complaint) => void }) {
+function ConsumerComplaintForm({ onSubmit }) {
   const [productName, setProductName] = useState('');
   const [brand, setBrand] = useState('');
   const [category, setCategory] = useState('Food & Grocery');
@@ -915,9 +857,9 @@ function ConsumerComplaintForm({ onSubmit }: { onSubmit: (c: Complaint) => void 
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const newComp: Complaint = {
+    const newComp = {
       id: 'CMP-' + Math.floor(1000 + Math.random() * 9000),
       productName,
       brand,
@@ -974,7 +916,7 @@ function ConsumerComplaintForm({ onSubmit }: { onSubmit: (c: Complaint) => void 
   );
 }
 
-function HistoryPage({ role }: { role: Role }) {
+function HistoryPage({ role }) {
   const [q, setQ] = useState('');
   const allResults = products.map(makeMockResult);
   const filtered = allResults.filter(r => r.product.name.toLowerCase().includes(q.toLowerCase()));
@@ -1020,7 +962,7 @@ function HistoryPage({ role }: { role: Role }) {
 }
 
 function ReportView() {
-  const state = useLocation().state as Result | undefined;
+  const state = useLocation().state;
   const r = state || makeMockResult(products[1]);
 
   return (
@@ -1176,11 +1118,11 @@ function PublicRulesPage() {
 
 function Login() {
   const nav = useNavigate();
-  const [role, setRole] = useState<Role>('officer');
+  const [role, setRole] = useState('officer');
   const [email, setEmail] = useState(creds.officer.email);
   const [password, setPassword] = useState(creds.officer.password);
 
-  const choose = (r: Role) => { 
+  const choose = (r) => { 
     setRole(r); 
     setEmail(creds[r].email); 
     setPassword(creds[r].password); 
@@ -1201,7 +1143,7 @@ function Login() {
         <span className="eyebrow">DEMO ACCESS (SIH PROTOTYPE)</span>
         <h1>Select Role to Log In</h1>
         <div className="roles">
-          {(Object.keys(labels) as Role[]).map(r => (
+          {Object.keys(labels).map(r => (
             <button type="button" onClick={() => choose(r)} className={role === r ? 'selected' : ''} key={r}>
               {labels[r]}
             </button>
@@ -1218,14 +1160,14 @@ function Login() {
 
 function AppShell() {
   const nav = useNavigate();
-  const user = JSON.parse(localStorage.getItem('lg-user') || 'null') as { role: Role; name: string } | null;
+  const user = JSON.parse(localStorage.getItem('lg-user') || 'null');
   if (!user) return <Navigate to="/login" />;
 
-  const [scanResult, setScanResult] = useState<Result>();
+  const [scanResult, setScanResult] = useState();
   const [isConsumerScanning, setIsConsumerScanning] = useState(false);
-  const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints);
+  const [complaints, setComplaints] = useState(initialComplaints);
 
-  const navConfig: Record<Role, { label: string; path: string; icon: React.ReactNode; badge?: number; action?: () => void }[]> = {
+  const navConfig = {
     officer: [
       { label: 'Dashboard', path: '', icon: <LayoutDashboard size={17} /> },
       { label: 'New Inspection', path: 'scan', icon: <Camera size={17} /> },
@@ -1256,9 +1198,9 @@ function AppShell() {
     ],
   };
 
-  const handleStatusUpdate = (newStatus: Status) => {
+  const handleStatusUpdate = (newStatus) => {
     if (!scanResult) return;
-    const updatedResult: Result = {
+    const updatedResult = {
       ...scanResult,
       status: newStatus,
       review: {
@@ -1343,7 +1285,7 @@ function AppShell() {
                       <h1>{scanResult.product.name}</h1>
                       <p>{scanResult.product.category} · Artwork Design Check</p>
                     </div>
-                    <Seal score={scanResult.score} statusLabel={scanResult.status} tone={cls(scanResult.status) as 'good' | 'warn' | 'bad'} />
+                    <Seal score={scanResult.score} statusLabel={scanResult.status} tone={cls(scanResult.status)} />
                   </div>
                   <section className="panel" style={{ margin: '18px 0' }}>
                     <h2>Packaging Corrections Checklist</h2>
@@ -1384,7 +1326,7 @@ function AppShell() {
                       <h1>{scanResult.product.name}</h1>
                       <p>Listing Status: {scanResult.status}</p>
                     </div>
-                    <Seal score={scanResult.score} statusLabel={scanResult.status} tone={cls(scanResult.status) as 'good' | 'warn' | 'bad'} />
+                    <Seal score={scanResult.score} statusLabel={scanResult.status} tone={cls(scanResult.status)} />
                   </div>
                   <section className="panel" style={{ margin: '18px 0' }}>
                     <h2>Marketplace PDP Checklist</h2>
@@ -1424,7 +1366,7 @@ function AppShell() {
                         <h1>{scanResult.product.name}</h1>
                         <p>{scanResult.product.manufacturer}</p>
                       </div>
-                      <Seal score={scanResult.score} statusLabel={scanResult.status === 'COMPLIANT' ? 'COMPLIANT' : 'NON COMPLIANT'} tone={cls(scanResult.status) as 'good' | 'warn' | 'bad'} />
+                      <Seal score={scanResult.score} statusLabel={scanResult.status === 'COMPLIANT' ? 'COMPLIANT' : 'NON COMPLIANT'} tone={cls(scanResult.status)} />
                     </div>
 
                     {scanResult.status !== 'COMPLIANT' && (
@@ -1542,4 +1484,4 @@ function Root() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<Root />);
+export default Root;
