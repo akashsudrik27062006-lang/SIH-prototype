@@ -14,3 +14,6 @@
 
 All records, credentials, OCR results, scores, findings, dashboards, and workflow updates remain mock/demo data until later milestones.
 
+## Milestone 2A foundation
+
+The repository now includes an unconnected Supabase client boundary and version-controlled schema, RLS, and private Storage definitions. These are infrastructure foundations, not live product features; existing demo flows remain mock-backed.

@@ -2,7 +2,8 @@
 
 ## Next authorized milestone
 
-- Establish the Supabase foundation: project configuration, Auth, profiles/roles, database schema, Storage, and RLS.
+- Apply the reviewed Milestone 2A migration to an authenticated Supabase project and configure the public browser environment variables.
+- Authorize and implement a dedicated real authentication/profile provisioning workflow without replacing the demo login prematurely.
 
 ## Later work
 
@@ -10,4 +11,3 @@
 - Build the deterministic, versioned compliance rule engine.
 - Persist scan, finding, complaint, review, and report workflows.
 - Add deployment configuration and automated tests.
-

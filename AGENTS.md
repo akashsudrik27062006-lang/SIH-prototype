@@ -10,9 +10,8 @@ LabelGuard is the existing SIH 2026 (SIH26034) project for Legal Metrology packa
 - Read `docs/` and `progress/`, then inspect Git status and recent history before continuing work in a new session.
 - Run the appropriate build/type checks after meaningful changes.
 - Keep Git checkpoints after completed milestones.
-- Do not begin Supabase, OCR, Gemini, or other backend work until the applicable milestone authorizes it.
+- Milestone 2A authorizes only the Supabase foundation: client boundary, version-controlled schema, private Storage foundation, and RLS. Do not begin authentication workflows, OCR, Gemini, other AI work, or the rule engine until a later milestone authorizes them.
 
 ## Compliance principle
 
 AI is not the final legal authority. AI extracts information and can produce potential findings. Deterministic rules validate requirements. A human/authorized Legal Metrology Officer must verify enforcement decisions.
-
